@@ -10,4 +10,10 @@ serde_json = "1.0.140"
 shellexpand = "3.1.1"
 solana-client = "2.3.2"
 solana-sdk = "2.3.1"
+spl-token = "8.0.0"
 tokio = { version = "1.46.0", features = ["full"] }
+
+solana-system-interface = "1.0.0" 
+# #[deprecated(since = "2.3.0", note = "Use `solana_system_interface` crate instead")]
+# use solana_sdk::system_instruction
+# so, it was deprecated, and i need to add an extra module without following the rules in task

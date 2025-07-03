@@ -34,7 +34,7 @@ impl SolanaClient {
         self.payer.pubkey()
     }
 
-    pub fn send_transaction_with_signers(
+    pub fn send_transaction_with_signer(
         &self,
         instructions: Vec<solana_sdk::instruction::Instruction>,
         signers: &[&dyn Signer],
