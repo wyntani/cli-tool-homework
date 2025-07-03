@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[command(about = "A CLI tool for creating SPL tokens and airdropping them to recipients")]
 pub struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    pub command: Commands,
 }
 
 #[derive(Subcommand)]
