@@ -25,6 +25,15 @@ pub enum Commands {
         #[arg(long, help = "Path to file containing recipient addresses")]
         recipients: PathBuf,
     },
+    #[command(about = "Batch airdrop tokens to multiple recipients in a single transaction")]
+    BatchAirdrop {
+        #[arg(long, help = "Token mint address")]
+        token_mint: String,
+        #[arg(long, help = "Amount of tokens to airdrop to each recipient")]
+        amount: u64,
+        #[arg(long, help = "Path to file containing recipient addresses")]
+        recipients: PathBuf,
+    },
     #[command(about = "Check token balance for an address")]
     CheckBalance {
         #[arg(long, help = "Token mint address")]

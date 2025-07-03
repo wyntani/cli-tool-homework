@@ -1,5 +1,4 @@
 use crate::executor::client::SolanaClient;
-use crate::utils::custom_io_tools::load_recipients;
 use crate::utils::custom_rpc_tool::get_associated_token_address;
 use anyhow::Context;
 use anyhow::Result;
@@ -10,7 +9,6 @@ use solana_sdk::{
 };
 use solana_system_interface::instruction as system_instruction;
 use spl_token::{instruction as token_instruction, state::Mint};
-use std::path::Path;
 use std::str::FromStr;
 
 pub struct TokenExecutor {
@@ -69,12 +67,10 @@ impl TokenExecutor {
         &self,
         token_mint: &str,
         amount: u64,
-        recipients_file: &Path,
+        recipients: Vec<Pubkey>,
     ) -> Result<()> {
         let mint_pubkey = Pubkey::from_str(token_mint)
             .with_context(|| format!("Invalid token mint address: {}", token_mint))?;
-
-        let recipients = load_recipients(recipients_file)?;
 
         println!("Starting airdrop to {} recipients...", recipients.len());
 
@@ -157,6 +153,67 @@ impl TokenExecutor {
         let signature = self
             .client
             .send_transaction_with_signer(instructions, &[&self.client.payer])?;
+
+        Ok(signature)
+    }
+
+    pub async fn batch_airdrop_to_recipients(
+        &self,
+        token_mint: &str,
+        recipients: Vec<Pubkey>,
+        amount: u64,
+    ) -> Result<String> {
+        let mint_pubkey = Pubkey::from_str(token_mint)
+            .with_context(|| format!("Invalid token mint address: {}", token_mint))?;
+
+        let mut instructions = vec![];
+
+        for recipient in recipients {
+            let associated_token_address = get_associated_token_address(&recipient, &mint_pubkey);
+
+            let account_info = self
+                .client
+                .rpc_client
+                .get_account(&associated_token_address);
+
+            if account_info.is_err() {
+                let rent = self
+                    .client
+                    .rpc_client
+                    .get_minimum_balance_for_rent_exemption(spl_token::state::Account::LEN)?;
+
+                instructions.push(system_instruction::create_account(
+                    &self.client.payer.pubkey(),
+                    &associated_token_address,
+                    rent,
+                    spl_token::state::Account::LEN as u64,
+                    &spl_token::id(),
+                ));
+
+                instructions.push(token_instruction::initialize_account(
+                    &spl_token::id(),
+                    &associated_token_address,
+                    &mint_pubkey,
+                    &recipient,
+                )?);
+            }
+
+            instructions.push(token_instruction::mint_to(
+                &spl_token::id(),
+                &mint_pubkey,
+                &associated_token_address,
+                &self.client.payer.pubkey(),
+                &[],
+                amount,
+            )?);
+        }
+
+        let signature = self
+            .client
+            .send_transaction_with_signer(instructions, &[&self.client.payer])?;
+
+        println!("Batch airdrop completed successfully!");
+        println!("Transaction signature: {}", signature);
 
         Ok(signature)
     }
