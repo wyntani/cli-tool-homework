@@ -4,13 +4,13 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(name = "Spl-Airdropper")]
 #[command(about = "A CLI tool for creating SPL tokens and airdropping them to recipients")]
-struct Cli {
+pub struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
 
 #[derive(Subcommand)]
-enum Commands {
+pub enum Commands {
     #[command(about = "Create a new SPL token mint")]
     CreateToken {
         #[arg(long, help = "Number of decimal places for the token")]
