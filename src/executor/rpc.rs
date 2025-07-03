@@ -8,6 +8,7 @@ use solana_sdk::{
     signature::{Keypair, Signer},
 };
 use solana_system_interface::instruction as system_instruction;
+use spl_associated_token_account::instruction as ata_instruction;
 use spl_token::{instruction as token_instruction, state::Mint};
 use std::str::FromStr;
 
@@ -120,25 +121,12 @@ impl TokenExecutor {
             .get_account(&associated_token_address);
 
         if account_info.is_err() {
-            let rent = self
-                .client
-                .rpc_client
-                .get_minimum_balance_for_rent_exemption(spl_token::state::Account::LEN)?;
-
-            instructions.push(system_instruction::create_account(
+            instructions.push(ata_instruction::create_associated_token_account(
                 &self.client.payer.pubkey(),
-                &associated_token_address,
-                rent,
-                spl_token::state::Account::LEN as u64,
+                &recipient,
+                mint,
                 &spl_token::id(),
             ));
-
-            instructions.push(token_instruction::initialize_account(
-                &spl_token::id(),
-                &associated_token_address,
-                mint,
-                &recipient,
-            )?);
         }
 
         instructions.push(token_instruction::mint_to(
@@ -177,25 +165,12 @@ impl TokenExecutor {
                 .get_account(&associated_token_address);
 
             if account_info.is_err() {
-                let rent = self
-                    .client
-                    .rpc_client
-                    .get_minimum_balance_for_rent_exemption(spl_token::state::Account::LEN)?;
-
-                instructions.push(system_instruction::create_account(
+                instructions.push(ata_instruction::create_associated_token_account(
                     &self.client.payer.pubkey(),
-                    &associated_token_address,
-                    rent,
-                    spl_token::state::Account::LEN as u64,
+                    &recipient,
+                    &mint_pubkey,
                     &spl_token::id(),
                 ));
-
-                instructions.push(token_instruction::initialize_account(
-                    &spl_token::id(),
-                    &associated_token_address,
-                    &mint_pubkey,
-                    &recipient,
-                )?);
             }
 
             instructions.push(token_instruction::mint_to(
